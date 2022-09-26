@@ -1,0 +1,4 @@
+english-words
+Pillow
+tkmacosx
+

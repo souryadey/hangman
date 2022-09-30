@@ -32,7 +32,7 @@ MESSAGE_FONT = tk.font.Font(size=20)
 
 
 ################################################################################
-# Create frames and globals
+# Create frames
 ################################################################################
 frame_word = tk.Frame(root)
 frame_word.grid(row=0, column=0, pady=10)
@@ -42,21 +42,28 @@ frame_keys.grid(row=1, column=0, padx=10)
 
 frame_hang = tk.Frame(root)
 frame_hang.grid(row=0, column=1, rowspan=2)
+################################################################################
 
-actual_word = ''
-formed_word = ''
-label_formed_word = None
 
-image = None
-label_image = None
+################################################################################
+# Create global state
+################################################################################
+gs = {
+    'actual_word': [],
+    'formed_word': [],
+    'label_formed_word': None,
 
-buttons = {}
+    'image': None,
+    'label_image': None,
 
-button_play = None
-button_quit = None
-label_message = None
+    'buttons': {},
 
-tries = INITIAL_TRIES
+    'button_play': None,
+    'button_quit': None,
+    'label_message': None,
+
+    'tries': INITIAL_TRIES
+}
 ################################################################################
 
 
@@ -75,72 +82,74 @@ image_files = [os.path.join(image_directory,f) for f in image_files]
 ################################################################################
 def write_formed_word():
     """ Write the formed word in frame_word """
-    global formed_word, label_formed_word
-    if label_formed_word:
-        label_formed_word.grid_forget()
-    label_formed_word = tk.Label(frame_word, text=' '.join(formed_word), font=WORD_FONT)
-    label_formed_word.grid(row=0, column=0, rowspan=3, columnspan=2, pady=10)
+    global gs
+    if gs['label_formed_word']:
+        gs['label_formed_word'].grid_forget()
+    gs['label_formed_word'] = tk.Label(frame_word, text=' '.join(gs['formed_word']), font=WORD_FONT)
+    gs['label_formed_word'].grid(row=0, column=0, rowspan=3, columnspan=2, pady=10)
 
 def show_final(message):
     """ Show the final message and replay / quit options """
-    global label_message, button_play, button_quit
-    label_message = tk.Label(frame_word, text=message, font=MESSAGE_FONT)
-    button_play = Button(frame_word, text='Play again', command = load_new_word, font=MESSAGE_FONT)
-    button_quit = Button(frame_word, text='Quit', command = root.quit, font=MESSAGE_FONT)
-    label_message.grid(row=3, column=0, columnspan=2, pady=10)
-    button_play.grid(row=4, column=0, pady=10)
-    button_quit.grid(row=4, column=1, pady=10)
+    global gs
+    gs['label_message'] = tk.Label(frame_word, text=message, font=MESSAGE_FONT)
+    gs['button_play'] = Button(frame_word, text='Play again', command = load_new_word, font=MESSAGE_FONT)
+    gs['button_quit'] = Button(frame_word, text='Quit', command = root.quit, font=MESSAGE_FONT)
+    gs['label_message'].grid(row=3, column=0, columnspan=2, pady=10)
+    gs['button_play'].grid(row=4, column=0, pady=10)
+    gs['button_quit'].grid(row=4, column=1, pady=10)
 
-def show_image(tries):
+def show_image(t):
     """ Show the hangman image in frame_hang """
-    global image, label_image
-    image = ImageTk.PhotoImage(Image.open(image_files[tries]))
-    if label_image:
-        label_image.pack_forget()
-    label_image = tk.Label(frame_hang, image=image)
-    label_image.pack(padx=5, pady=5)
+    global gs
+    gs['image'] = ImageTk.PhotoImage(Image.open(image_files[t]))
+    if gs['label_image']:
+        gs['label_image'].pack_forget()
+    gs['label_image'] = tk.Label(frame_hang, image=gs['image'])
+    gs['label_image'].pack(padx=5, pady=5)
 
 
 def click_button(letter):
     """ What happens on clicking a letter """
-    global actual_word, formed_word, buttons, tries
+    global gs
     
     match = False
-    for idx,actual_letter in enumerate(actual_word):
+    for idx,actual_letter in enumerate(gs['actual_word']):
         if letter == actual_letter:
             match = True
-            formed_word[idx] = letter
+            gs['formed_word'][idx] = letter
     
     write_formed_word()
-    buttons[letter]['state'] = tk.DISABLED
+    gs['buttons'][letter]['state'] = tk.DISABLED
     
     if match:
-        buttons[letter]['background'] = 'green'
-        if formed_word == actual_word:
-            show_final('\U0001F601 Congratulations, you successfully guessed the word!')
+        gs['buttons'][letter]['background'] = 'green'
+        if gs['formed_word'] == gs['actual_word']:
+            show_final("\U0001F601 Congratulations, you successfully guessed the word!")
     else:
-        buttons[letter]['background'] = 'red'
-        tries -= 1
-        show_image(tries)
-        if tries == 0:
-            show_final(f'\U0001F641 No more tries remaining. The word is {"".join(actual_word)}')
+        gs['buttons'][letter]['background'] = 'red'
+        gs['tries'] -= 1
+        show_image(gs['tries'])
+        if gs['tries'] == 0:
+            show_final(f"\U0001F641 No more tries remaining. The word is {''.join(gs['actual_word'])}")
 
 
 def load_new_word():
-    global actual_word, formed_word, buttons, label_message, button_play, button_quit, tries
+    global gs
     
-    if label_message:
-        label_message.grid_forget()
-    if button_play:
-        button_play.grid_forget()
-    if button_quit:
-        button_quit.grid_forget()
+    if gs['label_message']:
+        gs['label_message'].grid_forget()
+    if gs['button_play']:
+        gs['button_play'].grid_forget()
+    if gs['button_quit']:
+        gs['button_quit'].grid_forget()
 
     row = 0
     column = 0
     for letter in 'QWERTYUIOPASDFGHJKLZXCVBNM':
-        buttons[letter] = Button(frame_keys, text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=BUTTON_FONT, disabledforeground='black')
-        buttons[letter].grid(row=row, column=column, columnspan=3)
+        if gs['buttons'].get(letter):
+            gs['buttons'][letter].grid_forget() # Doing grid_forget() here is not required since the newly created button should perfectly sit on top of the previously created button, if it existed. However, we do it as a form of defensive coding.
+        gs['buttons'][letter] = Button(frame_keys, text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=BUTTON_FONT, disabledforeground='black')
+        gs['buttons'][letter].grid(row=row, column=column, columnspan=3)
         column += 3
         if row == 0 and column == 10*3:
             row = 1
@@ -149,15 +158,15 @@ def load_new_word():
             row = 2
             column = 2
     
-    tries = INITIAL_TRIES
-    show_image(tries)
+    gs['tries'] = INITIAL_TRIES
+    show_image(gs['tries'])
 
     while True:
-        actual_word = random.sample(words,1)[0]
-        if len(actual_word) >= MIN_WORD_SIZE:
+        gs['actual_word'] = random.sample(words,1)[0]
+        if len(gs['actual_word']) >= MIN_WORD_SIZE:
             break
-    actual_word = [*actual_word.upper()]
-    formed_word = len(actual_word)*['_']
+    gs['actual_word'] = [*gs['actual_word'].upper()]
+    gs['formed_word'] = len(gs['actual_word'])*['_']
     write_formed_word()
 ################################################################################
 

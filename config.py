@@ -1,6 +1,8 @@
 from english_words import english_words_lower_alpha_set as words
 
 
+ROOT_FONT_SIZE = 40
+
 INITIAL_TRIES = 6
 
 WORDS = list(words)

@@ -15,19 +15,12 @@ root = tk.Tk()
 root.title('Hangman')
 
 
-# frame_init = tk.Frame(root)
-
-frame_word = tk.Frame(root)
-frame_word.grid(row=0, column=0, pady=10)
-
-frame_keys = tk.Frame(root)
-frame_keys.grid(row=1, column=0, padx=10)
-
-frame_hang = tk.Frame(root)
-frame_hang.grid(row=0, column=1, rowspan=2)
-
-
 gs = {
+    'frame_main': tk.Frame(root),
+    'frame_word': tk.Frame(root),
+    'frame_keys': tk.Frame(root),
+    'frame_hang': tk.Frame(root),
+
     'actual_word': [],
     'formed_word': [],
     'label_formed_word': None,
@@ -49,32 +42,32 @@ gs = {
 # Methods
 ################################################################################
 def write_formed_word():
-    """ Write the formed word in frame_word """
+    """ Write the formed word in gs['frame_word'] """
     global gs
     if gs['label_formed_word']:
         gs['label_formed_word'].grid_forget()
-    gs['label_formed_word'] = tk.Label(frame_word, text=' '.join(gs['formed_word']), font=('TkDefaultFont',WORD_FONT_SIZE))
+    gs['label_formed_word'] = tk.Label(gs['frame_word'], text=' '.join(gs['formed_word']), font=('TkDefaultFont',WORD_FONT_SIZE))
     gs['label_formed_word'].grid(row=0, column=0, rowspan=3, columnspan=2, pady=10)
 
 
 def show_final(message):
     """ Show the final message and replay / quit options """
     global gs
-    gs['label_message'] = tk.Label(frame_word, text=message, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
-    gs['button_play'] = Button(frame_word, text='Play again', command = load_new_word, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
-    gs['button_quit'] = Button(frame_word, text='Quit', command = root.quit, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
+    gs['label_message'] = tk.Label(gs['frame_word'], text=message, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
+    gs['button_play'] = Button(gs['frame_word'], text='Play Again', command=load_new_word, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
+    gs['button_quit'] = Button(gs['frame_word'], text='Main Menu', command=main_menu, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
     gs['label_message'].grid(row=3, column=0, columnspan=2, pady=10)
     gs['button_play'].grid(row=4, column=0, pady=10)
     gs['button_quit'].grid(row=4, column=1, pady=10)
 
 
 def show_image(t):
-    """ Show the hangman image in frame_hang """
+    """ Show the hangman image in gs['frame_hang'] """
     global gs
     gs['image'] = ImageTk.PhotoImage(Image.open(IMAGE_FILES[t]))
     if gs['label_image']:
         gs['label_image'].pack_forget()
-    gs['label_image'] = tk.Label(frame_hang, image=gs['image'])
+    gs['label_image'] = tk.Label(gs['frame_hang'], image=gs['image'])
     gs['label_image'].pack(padx=5, pady=5)
 
 
@@ -89,7 +82,7 @@ def click_button(letter):
             gs['formed_word'][idx] = letter
     
     write_formed_word()
-    gs['buttons'][letter]['state'] = tk.DISABLED
+    gs['buttons'][letter]['state'] = 'disabled'
     
     if match:
         gs['buttons'][letter]['background'] = 'green'
@@ -118,7 +111,7 @@ def load_new_word():
     for letter in 'QWERTYUIOPASDFGHJKLZXCVBNM':
         if gs['buttons'].get(letter):
             gs['buttons'][letter].grid_forget() # Doing grid_forget() here is not required since the newly created button should perfectly sit on top of the previously created button, if it existed. However, we do it as a form of defensive coding.
-        gs['buttons'][letter] = Button(frame_keys, text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=('TkDefaultFont',BUTTON_FONT_SIZE), disabledforeground='black')
+        gs['buttons'][letter] = Button(gs['frame_keys'], text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=('TkDefaultFont',BUTTON_FONT_SIZE), disabledforeground='black')
         gs['buttons'][letter].grid(row=row, column=column, columnspan=3)
         column += 3
         if row == 0 and column == 10*3:
@@ -140,8 +133,36 @@ def load_new_word():
     write_formed_word()
 
 
+def play_single():
+    global gs
+    gs['frame_main'].pack_forget()
+    gs['frame_word'].grid(row=0, column=0, pady=10)
+    gs['frame_keys'].grid(row=1, column=0, padx=10)
+    gs['frame_hang'].grid(row=0, column=1, rowspan=2)
+    load_new_word()
+
+def play_multiple():
+    global gs
+
+
+def main_menu():
+    global gs
+
+    gs['frame_word'].grid_forget()
+    gs['frame_keys'].grid_forget()
+    gs['frame_hang'].grid_forget()
+
+    gs['frame_main'].pack()
+
+    tk.Label(gs['frame_main'], text='Welcome to Hangman!', font=('TkDefaultFont',ROOT_FONT_SIZE)).grid(row=0, column=0, pady=20)
+    Button(gs['frame_main'], text='Play single hangman\n1 word, 6 tries', command=play_single, font=('TkDefaultFont',BUTTON_FONT_SIZE)).grid(row=1, column=0, pady=10)
+    Button(gs['frame_main'], text='Play multiple hangman\nEndless words, 11 tries\n(Coming soon ...)', command=play_multiple, font=('TkDefaultFont',BUTTON_FONT_SIZE), disabledforeground='black', state='disabled').grid(row=2, column=0, pady=10)
+    Button(gs['frame_main'], text='Quit', command=root.quit, font=('TkDefaultFont',BUTTON_FONT_SIZE)).grid(row=3, column=0, pady=10)
+
+
+
 ################################################################################
 # Main
 ################################################################################
-load_new_word()
+main_menu()
 root.mainloop()

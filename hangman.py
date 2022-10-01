@@ -1,39 +1,22 @@
 import tkinter as tk
 from tkmacosx import Button
 from PIL import ImageTk, Image
-import os
+
 import random
-from english_words import english_words_lower_alpha_set as words
+
+from load_images import IMAGE_FILES
+from config import *
 
 
 ################################################################################
-# Create root
+# Root, frames, global state
 ################################################################################
 root = tk.Tk()
 root.title('Hangman')
-################################################################################
 
 
-################################################################################
-# Define constants
-################################################################################
-INITIAL_TRIES = 6
+# frame_init = tk.Frame(root)
 
-words = list(words)
-MIN_WORD_SIZE = 5
-WORD_FONT = tk.font.Font(size=40)
-
-BUTTON_WIDTH = 60
-BUTTON_HEIGHT = 60
-BUTTON_FONT = tk.font.Font(size=20)
-
-MESSAGE_FONT = tk.font.Font(size=20)
-################################################################################
-
-
-################################################################################
-# Create frames
-################################################################################
 frame_word = tk.Frame(root)
 frame_word.grid(row=0, column=0, pady=10)
 
@@ -42,12 +25,8 @@ frame_keys.grid(row=1, column=0, padx=10)
 
 frame_hang = tk.Frame(root)
 frame_hang.grid(row=0, column=1, rowspan=2)
-################################################################################
 
 
-################################################################################
-# Create global state
-################################################################################
 gs = {
     'actual_word': [],
     'formed_word': [],
@@ -64,17 +43,6 @@ gs = {
 
     'tries': INITIAL_TRIES
 }
-################################################################################
-
-
-################################################################################
-# Load hangman images
-################################################################################
-image_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'images')
-image_files = [f for f in os.listdir(image_directory) if f.startswith('h') and f.endswith('.png')]
-image_files.sort(key = lambda f: int(os.path.splitext(f)[0][1:]))
-image_files = [os.path.join(image_directory,f) for f in image_files]
-################################################################################
 
 
 ################################################################################
@@ -85,23 +53,25 @@ def write_formed_word():
     global gs
     if gs['label_formed_word']:
         gs['label_formed_word'].grid_forget()
-    gs['label_formed_word'] = tk.Label(frame_word, text=' '.join(gs['formed_word']), font=WORD_FONT)
+    gs['label_formed_word'] = tk.Label(frame_word, text=' '.join(gs['formed_word']), font=('TkDefaultFont',WORD_FONT_SIZE))
     gs['label_formed_word'].grid(row=0, column=0, rowspan=3, columnspan=2, pady=10)
+
 
 def show_final(message):
     """ Show the final message and replay / quit options """
     global gs
-    gs['label_message'] = tk.Label(frame_word, text=message, font=MESSAGE_FONT)
-    gs['button_play'] = Button(frame_word, text='Play again', command = load_new_word, font=MESSAGE_FONT)
-    gs['button_quit'] = Button(frame_word, text='Quit', command = root.quit, font=MESSAGE_FONT)
+    gs['label_message'] = tk.Label(frame_word, text=message, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
+    gs['button_play'] = Button(frame_word, text='Play again', command = load_new_word, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
+    gs['button_quit'] = Button(frame_word, text='Quit', command = root.quit, font=('TkDefaultFont',MESSAGE_FONT_SIZE))
     gs['label_message'].grid(row=3, column=0, columnspan=2, pady=10)
     gs['button_play'].grid(row=4, column=0, pady=10)
     gs['button_quit'].grid(row=4, column=1, pady=10)
 
+
 def show_image(t):
     """ Show the hangman image in frame_hang """
     global gs
-    gs['image'] = ImageTk.PhotoImage(Image.open(image_files[t]))
+    gs['image'] = ImageTk.PhotoImage(Image.open(IMAGE_FILES[t]))
     if gs['label_image']:
         gs['label_image'].pack_forget()
     gs['label_image'] = tk.Label(frame_hang, image=gs['image'])
@@ -148,7 +118,7 @@ def load_new_word():
     for letter in 'QWERTYUIOPASDFGHJKLZXCVBNM':
         if gs['buttons'].get(letter):
             gs['buttons'][letter].grid_forget() # Doing grid_forget() here is not required since the newly created button should perfectly sit on top of the previously created button, if it existed. However, we do it as a form of defensive coding.
-        gs['buttons'][letter] = Button(frame_keys, text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=BUTTON_FONT, disabledforeground='black')
+        gs['buttons'][letter] = Button(frame_keys, text=letter, command = (lambda letter = letter: click_button(letter)), width=BUTTON_WIDTH, height=BUTTON_HEIGHT, font=('TkDefaultFont',BUTTON_FONT_SIZE), disabledforeground='black')
         gs['buttons'][letter].grid(row=row, column=column, columnspan=3)
         column += 3
         if row == 0 and column == 10*3:
@@ -162,15 +132,16 @@ def load_new_word():
     show_image(gs['tries'])
 
     while True:
-        gs['actual_word'] = random.sample(words,1)[0]
+        gs['actual_word'] = random.sample(WORDS,1)[0]
         if len(gs['actual_word']) >= MIN_WORD_SIZE:
             break
     gs['actual_word'] = [*gs['actual_word'].upper()]
     gs['formed_word'] = len(gs['actual_word'])*['_']
     write_formed_word()
+
+
 ################################################################################
-
-
+# Main
+################################################################################
 load_new_word()
-
 root.mainloop()
